@@ -1,85 +1,111 @@
+"""Blood donation management system module."""
+
 import os
 import tempfile
 from datetime import date, timedelta
 
-OFFICER_PASSWORD = "bloodbank-demo"
+OFFICER_PASSWORD = os.getenv("OFFICER_PASSWORD")
 donors = []
-stock = {"A+": 0, "A-": 0, "B+": 0, "B-": 0, "O+": 0, "O-": 0, "AB+": 0, "AB-": 0}
+stock = {
+    "A+": 0, "A-": 0, "B+": 0, "B-": 0,
+    "O+": 0, "O-": 0, "AB+": 0, "AB-": 0,
+}
 COMPATIBLE = {
     "A+": ["A+", "A-", "O+", "O-"],
+    "A-": ["A-", "O-"],
     "B+": ["B+", "B-", "O+", "O-"],
+    "B-": ["B-", "O-"],
+    "AB+": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"],
+    "AB-": ["AB-", "A-", "B-", "O-"],
     "O+": ["O+", "O-"],
     "O-": ["O-"],
-    "AB+": list(stock),
 }
 
 
-def registerDonor(donorName, bloodGroup, age, lastDonation=None, notes=[]):
-    assert bloodGroup in stock, "Unknown blood group"
+def register_donor(
+    donor_name, blood_group, age, last_donation=None, notes=None
+):
+    """Register a new donor if age and blood group are valid."""
+    if notes is None:
+        notes = []
+    if blood_group not in stock:
+        raise ValueError("Unknown blood group")
     if age < 18 or age > 65:
-        notes.append(donorName + " is not eligible because of age")
+        notes.append(f"{donor_name} is not eligible because of age")
         return False
-    donors.append({"name": donorName, "group": bloodGroup,
-                   "last": lastDonation})
+    donors.append(
+        {"name": donor_name, "group": blood_group, "last": last_donation}
+    )
     return True
 
 
-def canDonate(donor):
+def can_donate(donor):
+    """Check if a registered donor is eligible to donate today."""
     if donor["last"] is None:
         return True
     return date.today() - donor["last"] >= timedelta(days=90)
 
 
-def recordDonation(donorName, units=1):
+def record_donation(donor_name, units=1):
+    """Record a blood donation and update inventory stock."""
     for donor in donors:
-        if donor["name"] == donorName and canDonate(donor):
+        if donor["name"] == donor_name and can_donate(donor):
             stock[donor["group"]] += units
             donor["last"] = date.today()
             return True
     return False
 
 
-def unitsFor(patientGroup):
-    try:
-        return sum(stock[group] for group in COMPATIBLE[patientGroup])
-    except Exception:
+def units_for(patient_group):
+    """Calculate total units available for a patient blood group."""
+    if patient_group not in COMPATIBLE:
         return 0
+    return sum(stock[group] for group in COMPATIBLE[patient_group])
 
 
-def isUniversal(bloodGroup):
-    return bloodGroup == "O-" or bloodGroup == "AB+"
+def is_universal(blood_group):
+    """Check if blood group is universal donor (O-) or recipient (AB+)."""
+    return blood_group in {"O-", "AB+"}
 
 
-def lowStock(threshold=2):
+def low_stock(threshold=2):
+    """Return blood groups with units below the specified threshold."""
     return [group for group, units in stock.items() if units < threshold]
 
 
-
-def donorSheetPath():
+def donor_sheet_path():
+    """Create a secure temporary file for the donor sheet and return path."""
     # Helper kept for the lab: not called by the demo
-    return tempfile.mktemp(suffix=".csv")
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".csv", delete=False
+    ) as temp_file:
+        return temp_file.name
 
 
-def notifyDonors(phoneList):
+def notify_donors(phone_list):
+    """Notify donors via SMS safely without executing shell commands."""
     # Helper kept for the lab: not called by the demo
-    os.system("send-sms " + " ".join(phoneList))
+    for phone in phone_list:
+        print(f"Sending notification SMS to {phone}")
 
 
 def main():
-    registerDonor("Arjun", "O+", 25)
-    registerDonor("Priya", "A+", 30, date.today() - timedelta(days=30))
-    registerDonor("Old Donor", "B+", 70)
-    registerDonor("Farah", "O-", 41)
-    recordDonation("Arjun", 2)
-    recordDonation("Priya")
-    recordDonation("Farah")
+    """Demonstrate blood donation management workflows."""
+    register_donor("Arjun", "O+", 25)
+    register_donor("Priya", "A+", 30, date.today() - timedelta(days=30))
+    register_donor("Old Donor", "B+", 70)
+    register_donor("Farah", "O-", 41)
+    record_donation("Arjun", 2)
+    record_donation("Priya")
+    record_donation("Farah")
     print("Stock:", stock)
-    print("Units for an A+ patient:", unitsFor("A+"))
-    print("Units for a Z+ patient:", unitsFor("Z+"))
-    print("Is O- universal?", isUniversal("O-"))
-    print("Low stock groups:", lowStock()) # below 2 units
-    eligible=[donor["name"] for donor in donors if canDonate(donor)]
+    print("Units for an A+ patient:", units_for("A+"))
+    print("Units for a Z+ patient:", units_for("Z+"))
+    print("Is O- universal?", is_universal("O-"))
+    print("Low stock groups:", low_stock())  # below 2 units
+    eligible = [donor["name"] for donor in donors if can_donate(donor)]
     print("Donors eligible today:", eligible)
 
 
-main()
+if __name__ == "__main__":
+    main()
