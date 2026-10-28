@@ -116,3 +116,46 @@ I learned how static analysis tools identify different categories of problems, h
 
 Static analysis was performed on the Blood Donation System using Pylint, Bandit, and Flake8. The identified issues were addressed, and the final reports showed improved code quality, no Bandit findings, and no Flake8 violations.
 
+## 6. Viva Preparation
+
+### Q1. What is static code analysis?
+
+Static code analysis is the process of examining source code without executing it to identify potential bugs, security vulnerabilities, and coding-style issues.
+
+### Q2. Why did you use Pylint, Bandit, and Flake8?
+
+- **Pylint:** Checks code quality, naming conventions, and programming practices.
+- **Bandit:** Identifies potential security vulnerabilities in Python code.
+- **Flake8:** Checks Python formatting and style violations.
+
+### Q3. What is the objective of your project?
+
+The objective was to analyze and improve the quality, security, and maintainability of the Blood Donation Management System using static code analysis tools.
+
+### Q4. What were your final results?
+
+Pylint achieved a score of 10.00/10, Bandit reported zero issues, and Flake8 reported zero formatting errors.
+
+### Q5. What was the hardcoded password issue?
+
+The original program contained a password directly in the source code. Hardcoded credentials can expose sensitive information if the source code is shared. The credential was removed from the source and replaced with environment-variable access.
+
+### Q6. What is a mutable default argument?
+
+A mutable default argument, such as `notes=[]`, can be shared across multiple function calls. This can cause unexpected behavior. Using `None` as the default and creating a new list inside the function avoids this problem.
+
+### Q7. Why is `os.system()` potentially dangerous?
+
+Executing shell commands with user-controlled input can introduce command-injection vulnerabilities. A safer approach avoids constructing and executing shell commands from input.
+
+### Q8. Why is `tempfile.mktemp()` unsafe?
+
+It generates a temporary filename without securely creating the file, creating a risk that another process could use that filename before the program does. `NamedTemporaryFile` provides a safer alternative.
+
+### Q9. What did you learn from this lab?
+
+I learned how to use static analysis tools, interpret their reports, fix security and code-quality issues, and verify improvements by comparing before-and-after results.
+
+### Q10. Why did you create three Git commits?
+
+The lab requires three commits documenting the work. My commits organize the cleaned code, before-and-after analysis reports, and lab documentation.
